@@ -18,6 +18,7 @@ Initial local verification: 2026-10-19, Windows x64, Node 26.7.0, genuine Postgr
 10. Concurrent worker passes, expiry and deduplicated local notifications.
 11. Transaction rollback without partial writes.
 12. Invalid dates/UUIDs and session revocation.
+13. Concurrent confirmation/cancellation cannot revive a cancelled reservation.
 
 These are correctness scenarios, not a throughput benchmark. No production traffic or scaling claim is implied.
 

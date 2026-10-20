@@ -43,7 +43,7 @@ class DayDto {
 }
 export async function recordEvent(
   client: PoolClient,
-  reservation: any,
+  reservation: { id: string; organization_id: string },
   type: string,
   actorId: string | null,
 ) {
@@ -70,6 +70,8 @@ export async function expireResource(client: PoolClient, resourceId: string) {
 export class ReservationsService {
   constructor(private readonly db: Database) {}
   async hold(actor: Actor, body: HoldDto, key: string) {
+    if (body.title.trim().length < 3)
+      throw new BadRequestException('Use pelo menos 3 caracteres no título.');
     if (!key || !/^[A-Za-z0-9_-]{8,100}$/.test(key))
       throw new BadRequestException('Envie uma Idempotency-Key com 8 a 100 caracteres.');
     const start = new Date(body.startsAt),

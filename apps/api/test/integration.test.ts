@@ -286,8 +286,29 @@ test('transaction rollback leaves no reservation, audit, or outbox partial write
   );
 });
 test('date validation, malformed identifiers, and logout are handled', async () => {
+  assert.equal(
+    (await request('/reservations', 'POST', { ...payload(25), title: ' a ' })).status,
+    400,
+  );
   assert.equal((await request('/reservations?day=2027-02-30')).status, 400);
   assert.equal((await request('/reservations/not-a-uuid/confirm', 'POST')).status, 400);
   assert.equal((await request('/auth/logout', 'POST', undefined, outsider)).status, 204);
   assert.equal((await request('/resources', 'GET', undefined, outsider)).status, 401);
+});
+
+test('racing confirmation and cancellation never revives a cancelled reservation', async () => {
+  const body = payload(28);
+  const reservation = await request('/reservations', 'POST', body);
+  const results = await Promise.all([
+    request(`/reservations/${reservation.body.id}/confirm`, 'POST'),
+    request(`/reservations/${reservation.body.id}/cancel`, 'POST'),
+  ]);
+  assert.equal(results[1].status, 201);
+  assert.ok([201, 409].includes(results[0].status));
+  assert.equal(
+    (await db.pool.query('SELECT status FROM reservations WHERE id=$1', [reservation.body.id]))
+      .rows[0].status,
+    'cancelled',
+  );
+  assert.equal((await request('/reservations', 'POST', body)).status, 201);
 });
