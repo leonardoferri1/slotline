@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: slotline
+      POSTGRES_PASSWORD: slotline-local-only
+      POSTGRES_DB: slotline
+    ports:
+      - '127.0.0.1:55438:5432'
+    volumes:
+      - slotline-data:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U slotline -d slotline']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+volumes:
+  slotline-data:
