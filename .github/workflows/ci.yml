@@ -1,0 +1,33 @@
+name: Verify
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: slotline
+          POSTGRES_PASSWORD: ci-only
+          POSTGRES_DB: slotline_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U slotline -d slotline_test"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://slotline:ci-only@127.0.0.1:5432/slotline_test
+      WORKER_DISABLED: 'true'
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm run build
+      - run: npm run test:external
+      - run: npm audit --omit=dev
